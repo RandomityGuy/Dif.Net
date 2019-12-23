@@ -19,6 +19,7 @@ namespace Dif.Net.Builder
 
         Interior interior;
 
+        //For optimization/searching of these
         Dictionary<int, short> planehashes = new Dictionary<int, short>();
         Dictionary<int, int> pointhashes = new Dictionary<int, int>();
         Dictionary<int, int> emitstringhashes = new Dictionary<int, int>();
@@ -33,7 +34,7 @@ namespace Dif.Net.Builder
                 UV = new List<Vector2>() { uv1, uv2, uv3 },
                 Indices = new List<int>() { 0, 1, 2 },
                 Material = "None",
-                Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1)))
+                Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * -1
             };
             polygons.Add(poly);
         }
@@ -45,7 +46,7 @@ namespace Dif.Net.Builder
                 UV = new List<Vector2>() { uv1, uv2, uv3},
                 Indices = new List<int>() { 0, 1, 2 },
                 Material = material,
-                Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1)))
+                Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * -1
             };
             if (!materialList.Contains(material))
                 materialList.Add(material);
@@ -58,6 +59,27 @@ namespace Dif.Net.Builder
                 materialList.Add(poly.Material);
         }
 
+        /*
+         * The order of exports for an interior is:
+         * BSPNode
+         * -SolidLeafSurfaces       
+         * --Surface
+         * ---Plane
+         * ----Normal
+         * ---Material
+         * ---TexGen
+         * ---Winding
+         * ----Point
+         * -BSPSolidLeaf
+         * ConvexHull
+         * -All the hull indexes
+         * -Emit strings
+         * Zones
+         * -ZoneSurfaces
+         * CoordBins
+         * The rest unused stuff
+        */
+
         short ExportPlane(Polygon poly)
         {
             if (interior.planes == null)
@@ -67,12 +89,12 @@ namespace Dif.Net.Builder
                 planehashes = new Dictionary<int, short>();
 
             var plane = new Plane();
-            plane.FromPtNormal(poly.Vertices[0], poly.Normal);
+            plane = plane.FromPtNormal(poly.Vertices[0], poly.Normal);
             var hash = plane.Normal.X.GetHashCode() ^ plane.Normal.Y.GetHashCode() ^ plane.Normal.Z.GetHashCode() ^ plane.D.GetHashCode();
             if (planehashes.ContainsKey(hash))
                 return planehashes[hash];
 
-            if (interior.planes.Count < ushort.MaxValue)
+            if (interior.planes.Count > ushort.MaxValue)
                 throw new Exception("Plane Limits Reached");
 
             var index = (short)interior.planes.Count;
@@ -96,11 +118,14 @@ namespace Dif.Net.Builder
             if (planehashes == null)
                 planehashes = new Dictionary<int, short>();
 
+            if (interior.normals == null)
+                interior.normals = new List<Vector3>();
+
             var hash = plane.Normal.X.GetHashCode() ^ plane.Normal.Y.GetHashCode() ^ plane.Normal.Z.GetHashCode() ^ plane.D.GetHashCode();
             if (planehashes.ContainsKey(hash))
                 return planehashes[hash];
 
-            if (interior.planes.Count < ushort.MaxValue)
+            if (interior.planes.Count > ushort.MaxValue)
                 throw new Exception("Plane Limits Reached");
 
             var index = (short)interior.planes.Count;
@@ -137,12 +162,16 @@ namespace Dif.Net.Builder
             if (interior.points == null)
                 interior.points = new List<Vector3>();
 
+            if (interior.pointVisibilities == null)
+                interior.pointVisibilities = new List<byte>();
+
             var hash = p.X.GetHashCode() ^ p.Y.GetHashCode() ^ p.Z.GetHashCode();
             if (pointhashes.ContainsKey(hash))
                 return pointhashes[hash];
 
             var index = interior.points.Count;
             interior.points.Add(p);
+            interior.pointVisibilities.Add(255);
             return index;
         }
 
@@ -574,6 +603,9 @@ namespace Dif.Net.Builder
             if (interior.coordBins == null)
                 interior.coordBins = new CoordBinList();
 
+            if (interior.coordBinIndices == null)
+                interior.coordBinIndices = new List<short>();
+
             for (int i = 0; i < 256; i++)
                 interior.coordBins.Add(new CoordBin());
 
@@ -618,15 +650,20 @@ namespace Dif.Net.Builder
             var bspnodes = new List<BSPBuilder.BSPNode>();
             foreach (var poly in polygons)
             {
-                var node = new BSPBuilder.BSPNode();
-                node.IsLeaf = true;
-                node.Polygon = poly;
+                var leafnode = new BSPBuilder.BSPNode();
+                leafnode.IsLeaf = true;
+                leafnode.Polygon = poly;
+                var n = new BSPBuilder.BSPNode();
+                n.Front = leafnode;
+                n.Plane = new Plane().FromPtNormal(poly.Vertices[0], poly.Normal);
+                bspnodes.Add(n);
             }
 
             var BSPBuilder = new BSPBuilder();
             var root = BSPBuilder.BuildBSPRecursive(bspnodes);
 
-            var newpolygons = root.GatherPolygons();
+            polygons.Clear();
+            root.GatherPolygons(ref polygons);
 
             interior = new Interior();
 
@@ -675,7 +712,12 @@ namespace Dif.Net.Builder
             for (int i = 0; i < interior.surfaces.Count; i++)
                 interior.zoneSurfaces.Add((short)i);
 
+
+            ExportCoordBins();
+
+            //Initialize all the null values to default values
             interior.interiorFileVersion = 0;
+            interior.materialListVersion = 1;
             interior.coordBinMode = 0;
             interior.baseAmbientColor = new ColorF() { red = 1, green = 1, blue = 1, alpha = 1 };
             interior.alarmAmbientColor = new ColorF() { red = 1, green = 1, blue = 1, alpha = 1 };
@@ -684,10 +726,19 @@ namespace Dif.Net.Builder
             interior.hasAlarmState = false;
             interior.numLightStateEntries = 0;
             interior.boundingBox = GetBoundingBox();
-            interior.boundingSphere = GetBoundingSphere();
-
-
-            ExportCoordBins();
+            interior.boundingSphere = GetBoundingSphere();           
+            interior.animatedLights = new List<AnimatedLight>();
+            interior.lightMaps = new List<Lightmap>();
+            interior.lightStates = new List<LightState>();
+            interior.nameBuffer = new List<byte>();
+            interior.nullSurfaces = new List<NullSurface>();
+            interior.portals = new List<Portal>();
+            interior.stateDataBuffer = new StateDataBuffer();
+            interior.stateDatas = new List<StateData>();
+            interior.texMatIndices = new List<int>();
+            interior.texMatrices = new List<TexMatrix>();
+            interior.texNormals = new List<Vector3>();
+            interior.zonePortalList = new List<short>();
 
             ir.detailLevels.Add(interior);
         }
@@ -744,6 +795,7 @@ namespace Dif.Net.Builder
             return sphere;
         }
 
+        //Solution by HiGuy
         bool closeEnough(Vector3 p1, Vector3 p2, float dist = 0.0001f)
         {
             return (p2-p1).Length() < dist;

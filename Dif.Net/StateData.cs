@@ -17,7 +17,7 @@ namespace Dif.Net
     public class StateDataBuffer : IReadable, IWritable
     {
         public int flags;
-        public List<byte> stateDataBuffers;
+        public List<byte> stateDataBuffers = new List<byte>();        
 
         public void Read(BinaryReader rb)
         {

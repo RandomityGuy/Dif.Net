@@ -11,7 +11,7 @@ namespace Dif.Net.Builder
 {
     public static class PlaneExtensions
     {
-        public static void FromPtNormal(this Plane p,Vector3 point, Vector3 normal)
+        public static Plane FromPtNormal(this Plane p,Vector3 point, Vector3 normal)
         {
             p.Normal = normal;
             float w = (float)Math.Sqrt(normal.X * normal.X + normal.Y * normal.Y + normal.Z * normal.Z);
@@ -21,6 +21,8 @@ namespace Dif.Net.Builder
             //normal = glm::normalize(normal);
 
             p.D = -(Vector3.Dot(point, normal));
+
+            return p;
         }
     }
 
@@ -33,7 +35,7 @@ namespace Dif.Net.Builder
             public BSPNode Front;
             public BSPNode Back;
             public Polygon Polygon;
-            public Vector3 Center;
+            public Vector3? Center = null;
 
             public void CalculateCenter()
             {
@@ -51,18 +53,18 @@ namespace Dif.Net.Builder
                     var avgcenter = new Vector3();
                     if (Back != null)
                     {
-                        if (Back.Center == null)
+                        if (!Back.Center.HasValue)
                             Back.CalculateCenter();
 
-                        avgcenter += Back.Center;
+                        avgcenter += Back.Center.Value;
                         c++;
                     }
                     if (Front != null)
                     {
-                        if (Front.Center == null)
+                        if (!Front.Center.HasValue)
                             Front.CalculateCenter();
 
-                        avgcenter += Front.Center;
+                        avgcenter += Front.Center.Value;
                         c++;
                     }
                     avgcenter /= c;
@@ -70,81 +72,114 @@ namespace Dif.Net.Builder
                 }
             }
 
-            public List<Polygon> GatherPolygons()
+            public void GatherPolygons(ref List<Polygon> polys)
             {
-                var retlist = new List<Polygon>();
                 if (IsLeaf)
-                    retlist.Add(Polygon);
+                    polys.Add(Polygon);
                 else
                 {
                     if (Front != null)
-                        retlist.AddRange(Front.GatherPolygons());
+                        Front.GatherPolygons(ref polys);
                     if (Back != null)
-                        retlist.AddRange(Back.GatherPolygons());
+                        Back.GatherPolygons(ref polys);
                 }
-                return retlist;
                         
+            }
+
+            public int Count
+            {
+                get
+                {
+                    int count = 0;
+                    if (Front != null)
+                    {
+                        if (!Front.IsLeaf)
+                        {
+                            count += Front.Count;
+                            count++;
+                        }
+                    }
+                    if (Back != null)
+                    {
+                        if (!Back.IsLeaf)
+                        {
+                            count += Back.Count;
+                            count++;
+                        }
+                    }
+
+                    return count;
+                }
             }
         }
 
         int hashPoint(Vector3 p)
         {
-            return p.X.GetHashCode() ^ p.Y.GetHashCode() ^ p.Z.GetHashCode();
+            return p.GetHashCode();//p.X.GetHashCode() ^ p.Y.GetHashCode() ^ p.Z.GetHashCode();
         }
 
+        //Basically, the algorithm is recursively group up 2 closest bsp nodes into a single node till only 1 remains
         List<BSPNode> BuildBSP(List<BSPNode> nodes)
         {
-            var pts = new List<Vector3>();
-            var centertobspmap = new Dictionary<int,BSPNode>();
+            var kdtree = new KdTree<float, BSPNode>(3, new KdTree.Math.FloatMath(),AddDuplicateBehavior.Error);
+
+            //Calculate all the centers of nodes
             foreach (var node in nodes)
             {
                 node.CalculateCenter();
-                centertobspmap.Add(hashPoint(node.Center), node);
-                pts.Add(node.Center);
+                kdtree.Add(new float[] { node.Center.Value.X, node.Center.Value.Y, node.Center.Value.Z }, node);
             }
-
-            var kdtree = new KdTree<float, Vector3>(3, new KdTree.Math.FloatMath());
 
             var newnodes = new List<BSPNode>();
 
-            var containedptlist = new HashSet<int>();
-            foreach (var pt in pts)
-            {
-                kdtree.Add(new float[] { pt.X, pt.Y, pt.Z }, pt);
-            }
+            var containednodelist = new HashSet<BSPNode>();
 
-            for (var i = 0; i < pts.Count;i++)
+            //Now to pair up nearest nodes
+            for (var i = 0; i < nodes.Count;i++)
             {
-                if (containedptlist.Contains(hashPoint(pts[i])))
+                //We already used this node up
+                if (containednodelist.Contains(nodes[i]))
                     continue;
 
-                if (i == pts.Count - 1)
+
+                var node = nodes[i];
+                var pt = node.Center.Value;
+                //We dont want to find this very node
+                kdtree.RemoveAt(new float[] { pt.X, pt.Y, pt.Z });
+                //Find the nearest node
+                var nn = kdtree.GetNearestNeighbours(new float[] { pt.X, pt.Y, pt.Z }, 1);
+
+                //No nodes found
+                if (nn.Length == 0)
                 {
-                    newnodes.Add(centertobspmap[hashPoint(pts[i])]);
+                    //Insert the node as it is in the new list
+                    newnodes.Add(nodes[i]);
                     break;
                 }
 
-                var pt = pts[i];
-                kdtree.RemoveAt(new float[] { pt.X, pt.Y, pt.Z });
+                var nb = nn[0].Value;
 
-                var nn = kdtree.GetNearestNeighbours(new float[] { pt.X, pt.Y, pt.Z }, 1)[0];
+                containednodelist.Add(nb);
 
-                var nb = nn.Value;
+                //The centre of the new node is the mean of both nodes
+                var center = (pt + nb.Center.Value) * 0.5f;
 
-                containedptlist.Add(hashPoint(nb));
-
-                var center = (pt + nb) * 0.5f;
-
+                //Construct the plane
                 var p = new Plane();
-                p.FromPtNormal(center, nb - pt);
+                p = p.FromPtNormal(center, nb.Center.Value - pt);
 
-                var node = new BSPNode();
-                node.Center = center;
-                node.Front = centertobspmap[hashPoint(nb)];
-                node.Back = centertobspmap[hashPoint(pt)];
-                node.Plane = p;
+                //Construct the node
+                var newnode = new BSPNode();
+                newnode.Center = center;
+                newnode.Front = nb;
+                newnode.Back = node;
+                newnode.Plane = p;
 
-                newnodes.Add(node);
+                //Remove the node center from the search tree
+                kdtree.RemoveAt(new float[] { nb.Center.Value.X, nb.Center.Value.Y, nb.Center.Value.Z });
+
+                //Add the node in
+                newnodes.Add(newnode);
             }
 
             return newnodes;

@@ -17,7 +17,7 @@ namespace Dif.Net
         public List<InteriorPathFollower> interiorPathFollowers = new List<InteriorPathFollower>();
         public List<ForceField> forceFields = new List<ForceField>();
         public List<AISpecialNode> AISpecialNodes = new List<AISpecialNode>();
-        public VehicleCollision vehicleCollisions = new VehicleCollision();
+        public VehicleCollision vehicleCollisions = VehicleCollision.Default;
         public List<GameEntity> gameEntities = new List<GameEntity>();
 
         public void Read(BinaryReader rb)
