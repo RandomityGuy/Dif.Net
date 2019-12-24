@@ -35,7 +35,7 @@ namespace obj2difSharp
             {
                 foreach (var face in group.Faces)
                 {
-                    if (tricount > 16000) //Max limits reached
+                    if (tricount > 16384) //Max limits reached
                     {
                         builder = new DifBuilder();
                         builder.FlipNormals = flipnormal;

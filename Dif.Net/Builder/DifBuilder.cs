@@ -33,6 +33,7 @@ namespace Dif.Net.Builder
             var poly = new Polygon()
             {
                 Vertices = new List<Vector3>() { p1, p2, p3 },
+                Indices = new List<int>() { 0, 1, 2},
                 UV = new List<Vector2>() { uv1, uv2, uv3 },
                 Material = "None",
                 Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * (FlipNormals ? -1 : 1)
@@ -44,6 +45,7 @@ namespace Dif.Net.Builder
             var poly = new Polygon()
             {
                 Vertices = new List<Vector3>() { p1, p2, p3 },
+                Indices = new List<int>() { 0, 1, 2 },
                 UV = new List<Vector2>() { uv1, uv2, uv3 },
                 Material = material,
                 Normal = normal
@@ -57,6 +59,7 @@ namespace Dif.Net.Builder
             var poly = new Polygon()
             {
                 Vertices = new List<Vector3>() { p1, p2, p3 },
+                Indices = new List<int>() { 0, 1, 2 },
                 UV = new List<Vector2>() { uv1, uv2, uv3},
                 Material = material,
                 Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * (FlipNormals ? -1 : 1)
