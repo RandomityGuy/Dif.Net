@@ -15,6 +15,8 @@ namespace Dif.Net.Builder
             public int planeIndex;
         };
 
+        public bool FlipNormals { get; set; } = false;
+
         List<Polygon> polygons = new List<Polygon>();
 
         Interior interior;
@@ -32,10 +34,22 @@ namespace Dif.Net.Builder
             {
                 Vertices = new List<Vector3>() { p1, p2, p3 },
                 UV = new List<Vector2>() { uv1, uv2, uv3 },
-                Indices = new List<int>() { 0, 1, 2 },
                 Material = "None",
-                Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * -1
+                Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * (FlipNormals ? -1 : 1)
             };
+            polygons.Add(poly);
+        }
+        public void AddTriangle(Vector3 p1, Vector3 p2, Vector3 p3, Vector2 uv1, Vector2 uv2, Vector2 uv3,Vector3 normal, string material)
+        {
+            var poly = new Polygon()
+            {
+                Vertices = new List<Vector3>() { p1, p2, p3 },
+                UV = new List<Vector2>() { uv1, uv2, uv3 },
+                Material = material,
+                Normal = normal
+            };
+            if (!materialList.Contains(material))
+                materialList.Add(material);
             polygons.Add(poly);
         }
         public void AddTriangle(Vector3 p1, Vector3 p2, Vector3 p3, Vector2 uv1, Vector2 uv2, Vector2 uv3,string material)
@@ -44,9 +58,8 @@ namespace Dif.Net.Builder
             {
                 Vertices = new List<Vector3>() { p1, p2, p3 },
                 UV = new List<Vector2>() { uv1, uv2, uv3},
-                Indices = new List<int>() { 0, 1, 2 },
                 Material = material,
-                Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * -1
+                Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * (FlipNormals ? -1 : 1)
             };
             if (!materialList.Contains(material))
                 materialList.Add(material);

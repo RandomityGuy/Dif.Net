@@ -121,7 +121,7 @@ namespace Dif.Net.Builder
         //Basically, the algorithm is recursively group up 2 closest bsp nodes into a single node till only 1 remains
         List<BSPNode> BuildBSP(List<BSPNode> nodes)
         {
-            var kdtree = new KdTree<float, BSPNode>(3, new KdTree.Math.FloatMath(),AddDuplicateBehavior.Error);
+            var kdtree = new KdTree<float, BSPNode>(3, new KdTree.Math.FloatMath(),AddDuplicateBehavior.Skip);
 
             //Calculate all the centers of nodes
             foreach (var node in nodes)

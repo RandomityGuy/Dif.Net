@@ -27,12 +27,12 @@ namespace obj2difSharp
 
         public static Vector3 FromString(string vs)
         {
-            return new Vector3(float.Parse(vs.GetWord(0)), float.Parse(vs.GetWord(1)), float.Parse(vs.GetWord(2)));
+            return new Vector3(float.Parse(vs.GetWord(0)), -float.Parse(vs.GetWord(2)), float.Parse(vs.GetWord(1)));
         }
 
         public static Vector2 FromStringV2(string vs)
         {
-            return new Vector2(float.Parse(vs.GetWord(0)), float.Parse(vs.GetWord(1)));
+            return new Vector2(float.Parse(vs.GetWord(0)), -float.Parse(vs.GetWord(1)));
         }
 
     }

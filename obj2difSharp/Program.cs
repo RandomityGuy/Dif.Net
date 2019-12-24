@@ -19,9 +19,17 @@ namespace obj2difSharp
             var objreader = new ObjReader();
             objreader.Parse(args[0]);
 
+            var flipnormal = false;
+            foreach (var arg in args)
+            {
+                if (arg == "-f")
+                    flipnormal = true;
+            }
+
             var builders = new List<DifBuilder>();
             var builder = new DifBuilder();
             builders.Add(builder);
+            builder.FlipNormals = flipnormal;
             var tricount = 0;
             foreach (var group in objreader.Groups)
             {
@@ -30,6 +38,7 @@ namespace obj2difSharp
                     if (tricount > 16000) //Max limits reached
                     {
                         builder = new DifBuilder();
+                        builder.FlipNormals = flipnormal;
                         builders.Add(builder);
                         tricount = 0;
                     }
@@ -42,7 +51,7 @@ namespace obj2difSharp
 
             for (int i = 0; i < builders.Count; i++)
             {
-                var build = (DifBuilder)builders[i];
+                var build = builders[i];
                 var dif = new InteriorResource();
                 build.Build(ref dif);
                 InteriorResource.Save(dif, Path.ChangeExtension(args[0], null) + i + ".dif");
