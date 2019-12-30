@@ -12,5 +12,9 @@ namespace Dif.Net
         public short portalCount;
         public int surfaceStart;
         public int surfaceCount;
+        [Version(12)]
+        public int staticMeshStart;
+        [Version(12)]
+        public int staticMeshCount;
     }
 }

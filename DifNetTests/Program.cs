@@ -11,8 +11,9 @@ namespace DifNetTests
     {
         static void Main(string[] args)
         {
-            var interior = InteriorResource.Load("Confluence2obj0.dif");
-            InteriorResource.Save(interior, "savetest.dif");
+            var interior = InteriorResource.Load("test.dif");
+            InteriorResource.Save(interior, "test3.dif");
+            var interior2 = InteriorResource.Load("test3.dif");
         }
     }
 }

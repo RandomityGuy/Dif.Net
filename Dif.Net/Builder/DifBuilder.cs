@@ -218,7 +218,7 @@ namespace Dif.Net.Builder
                 interior.windingIndices = new List<WindingIndex>();
 
             if (interior.windings == null)
-                interior.windings = new List<int>();
+                interior.windings = new MultiSizeIntList<int, short, IndexListSizeComparer>();
 
             var finalwinding = new List<int>();
             foreach (var pt in poly.Vertices)
@@ -294,7 +294,7 @@ namespace Dif.Net.Builder
                 interior.bspSolidLeaves = new List<BSPSolidLeaf>();
 
             if (interior.solidLeafSurfaces == null)
-                interior.solidLeafSurfaces = new List<int>();
+                interior.solidLeafSurfaces = new MultiSizeIntList<int, short>();
 
             if (n.IsLeaf)
             {
@@ -371,19 +371,19 @@ namespace Dif.Net.Builder
             if (interior.convexHullEmitStrings == null)
                 interior.convexHullEmitStrings = new List<byte>();
             if (interior.hullIndices == null)
-                interior.hullIndices = new List<int>();
+                interior.hullIndices = new MultiSizeIntList<int, short>();
             if (interior.hullPlaneIndices == null)
-                interior.hullPlaneIndices = new List<short>();
+                interior.hullPlaneIndices = new MultiSizeIntList<short, short>();
             if (interior.hullSurfaceIndices == null)
-                interior.hullSurfaceIndices = new List<int>();
+                interior.hullSurfaceIndices = new MultiSizeIntList<int, short>();
             if (interior.polyListPlanes == null)
-                interior.polyListPlanes = new List<short>();
+                interior.polyListPlanes = new MultiSizeIntList<short, short>();
             if (interior.polyListPoints == null)
-                interior.polyListPoints = new List<int>();
+                interior.polyListPoints = new MultiSizeIntList<int, short>();
             if (interior.polyListStrings == null)
                 interior.polyListStrings = new List<byte>();
             if (interior.hullEmitStringIndices == null)
-                interior.hullEmitStringIndices = new List<int>();
+                interior.hullEmitStringIndices = new MultiSizeIntList<int, short>();
            
             for (var polyIndex = 0; polyIndex < polys.Count; polyIndex++)
             {
@@ -604,7 +604,7 @@ namespace Dif.Net.Builder
                     };
 
                     if (interior.hullEmitStringIndices == null)
-                        interior.hullEmitStringIndices = new List<int>();
+                        interior.hullEmitStringIndices = new MultiSizeIntList<int, short>();
 
                     interior.hullEmitStringIndices.Add(ExportEmitString(emitString));
                 }
@@ -620,7 +620,7 @@ namespace Dif.Net.Builder
                 interior.coordBins = new CoordBinList();
 
             if (interior.coordBinIndices == null)
-                interior.coordBinIndices = new List<short>();
+                interior.coordBinIndices = new MultiSizeIntList<short, short>();
 
             for (int i = 0; i < 256; i++)
                 interior.coordBins.Add(new CoordBin());
@@ -721,7 +721,7 @@ namespace Dif.Net.Builder
             interior.zones.Add(z);
 
             if (interior.zoneSurfaces == null)
-                interior.zoneSurfaces = new List<short>();
+                interior.zoneSurfaces = new MultiSizeIntList<short, short>();
 
             if (interior.surfaces.Count > ushort.MaxValue)
                 throw new Exception("Max surfaces for zone reached");
@@ -754,7 +754,7 @@ namespace Dif.Net.Builder
             interior.texMatIndices = new List<int>();
             interior.texMatrices = new List<TexMatrix>();
             interior.texNormals = new List<Vector3>();
-            interior.zonePortalList = new List<short>();
+            interior.zonePortalList = new MultiSizeIntList<short, short>();
 
             ir.detailLevels.Add(interior);
         }

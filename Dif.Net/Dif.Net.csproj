@@ -61,6 +61,9 @@
     <Compile Include="ConvexHull.cs" />
     <Compile Include="CoordBin.cs" />
     <Compile Include="CoordBinList.cs" />
+    <Compile Include="Edge.cs" />
+    <Compile Include="Edge2.cs" />
+    <Compile Include="ExtendedLightmapData.cs" />
     <Compile Include="ForceField.cs" />
     <Compile Include="GameEntity.cs" />
     <Compile Include="Interior.cs" />
@@ -70,6 +73,7 @@
     <Compile Include="IWritable.cs" />
     <Compile Include="Lightmap.cs" />
     <Compile Include="LightState.cs" />
+    <Compile Include="MultiSizeIntList.cs" />
     <Compile Include="NullSurface.cs" />
     <Compile Include="Plane.cs" />
     <Compile Include="Portal.cs" />
@@ -82,6 +86,7 @@
     <Compile Include="TexMatrix.cs" />
     <Compile Include="Trigger.cs" />
     <Compile Include="VehicleCollision.cs" />
+    <Compile Include="VersionAttribute.cs" />
     <Compile Include="WindingIndex.cs" />
     <Compile Include="Zone.cs" />
   </ItemGroup>

@@ -22,5 +22,7 @@ namespace Dif.Net
         public int polyListPlaneStart;
         public int polyListPointStart;
         public int polyListStringStart;
+        [Version(12)]
+        public byte staticMesh;
     }
 }

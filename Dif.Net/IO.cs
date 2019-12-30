@@ -10,7 +10,16 @@ namespace Dif.Net
 {
     public static class IO
     {
+        public static int interiorFileVersion = 0;
+
+        public static bool debug = false;
         //This whole class is a huge hack for me being lazy to write all the read methods for all the classes
+
+        static void DebugPrint(string s)
+        {
+            if (debug)
+                Console.WriteLine(s);
+        }
 
         public static T Read<T>(BinaryReader rb)
         {
@@ -80,14 +89,34 @@ namespace Dif.Net
                     }
                     return (T)Convert.ChangeType(vec, typeof(T));
                 }
+                else if (typeof(IReadable).IsAssignableFrom(typeof(T)))
+                {
+                    var instance = (IReadable)Activator.CreateInstance(typeof(T));
+                    instance.Read(rb);
+                    return (T)Convert.ChangeType(instance, typeof(T));
+                }
                 else
                     throw new Exception("Cant read this yet");
             }
             else if (typeof(T).IsValueType)
             {
+                DebugPrint("Reading type " + typeof(T).ToString() + " at " + rb.BaseStream.Position);
                 var instance = Activator.CreateInstance(typeof(T));
                 foreach (var field in typeof(T).GetFields())
                 {
+                    var versionattrib = field.GetCustomAttributes(typeof(VersionAttribute), false);
+                    if (versionattrib.Length != 0)
+                    {
+                        var attrib = (VersionAttribute)versionattrib[0];
+
+                        if (attrib.Exclusions != null)
+                            if (attrib.Exclusions.Contains(interiorFileVersion))
+                                continue;
+
+                        if (interiorFileVersion > attrib.MaxVersion || interiorFileVersion < attrib.MinVersion)
+                            continue; //No reading/writing incompatbiles
+                    }
+                    DebugPrint("Reading field " + field.Name + " at " + rb.BaseStream.Position);
                     if (field.FieldType.IsGenericType)
                     {
                         if (field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
@@ -112,6 +141,7 @@ namespace Dif.Net
             }
             else if (typeof(IReadable).IsAssignableFrom(typeof(T)))
             {
+                DebugPrint("Reading type " + typeof(T).ToString() + " at " + rb.BaseStream.Position);
                 var instance = (IReadable)Activator.CreateInstance(typeof(T));
                 instance.Read(rb);
                 return (T)Convert.ChangeType(instance, typeof(T));
@@ -191,14 +221,34 @@ namespace Dif.Net
                     }
                     return vec;
                 }
+                else if (typeof(IReadable).IsAssignableFrom(type))
+                {
+                    var instance = (IReadable)Activator.CreateInstance(type);
+                    instance.Read(rb);
+                    return instance;
+                }
                 else
                     throw new Exception("Cant read this yet");
             }
             else if (type.IsValueType)
             {
+                DebugPrint("Reading type " + type.ToString() + " at " + rb.BaseStream.Position);
                 var instance = Activator.CreateInstance(type);
                 foreach (var field in type.GetFields())
                 {
+                    var versionattrib = field.GetCustomAttributes(typeof(VersionAttribute), false);
+                    if (versionattrib.Length != 0)
+                    {
+                        var attrib = (VersionAttribute)versionattrib[0];
+
+                        if (attrib.Exclusions != null)
+                            if (attrib.Exclusions.Contains(interiorFileVersion))
+                                continue;
+
+                        if (interiorFileVersion > attrib.MaxVersion || interiorFileVersion < attrib.MinVersion)
+                            continue; //No reading/writing incompatbiles
+                    }
+                    DebugPrint("Reading field " + field.Name + " at " + rb.BaseStream.Position);
                     if (field.FieldType.IsGenericType)
                     {
                         if (field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
@@ -223,6 +273,7 @@ namespace Dif.Net
             }
             else if (typeof(IReadable).IsAssignableFrom(type))
             {
+                DebugPrint("Reading type " + type.ToString() + " at " + rb.BaseStream.Position);
                 var instance = (IReadable)Activator.CreateInstance(type);
                 instance.Read(rb);
                 return instance;
@@ -305,13 +356,28 @@ namespace Dif.Net
             }
             else if (typeof(T).IsValueType)
             {
+                DebugPrint("Writing type " + typeof(T).ToString() + " at " + wb.BaseStream.Position);
                 foreach (var field in typeof(T).GetFields())
                 {
+                    var versionattrib = field.GetCustomAttributes(typeof(VersionAttribute), false);
+                    if (versionattrib.Length != 0)
+                    {
+                        var attrib = (VersionAttribute)versionattrib[0];
+
+                        if (attrib.Exclusions != null)
+                            if (attrib.Exclusions.Contains(interiorFileVersion))
+                                continue;
+
+                        if (interiorFileVersion > attrib.MaxVersion || interiorFileVersion < attrib.MinVersion)
+                            continue; //No reading/writing incompatbiles
+                    }
+                    DebugPrint("Writing field " + field.Name + " at " + wb.BaseStream.Position);
                     Write(field.FieldType,field.GetValue(obj), wb);
                 }
             }
             else if (typeof(IWritable).IsAssignableFrom(typeof(T)))
             {
+                DebugPrint("Writing type " + typeof(T).ToString() + " at " + wb.BaseStream.Position);
                 var instance = (IWritable)obj;
                 instance.Write(wb);
             }
@@ -394,16 +460,37 @@ namespace Dif.Net
                         Write(o.GetType(), o, wb);
                     }
                 }
+                else if (typeof(IWritable).IsAssignableFrom(type))
+                {
+                    DebugPrint("Writing type " + type.ToString() + " at " + wb.BaseStream.Position);
+                    var instance = (IWritable)obj;
+                    instance.Write(wb);
+                }
             }
             else if (type.IsValueType)
             {
+                DebugPrint("Writing type " + type.ToString() + " at " + wb.BaseStream.Position);
                 foreach (var field in type.GetFields())
                 {
+                    var versionattrib = field.GetCustomAttributes(typeof(VersionAttribute), false);
+                    if (versionattrib.Length != 0)
+                    {
+                        var attrib = (VersionAttribute)versionattrib[0];
+
+                        if (attrib.Exclusions != null)
+                            if (attrib.Exclusions.Contains(interiorFileVersion))
+                                continue;
+
+                        if (interiorFileVersion > attrib.MaxVersion || interiorFileVersion < attrib.MinVersion)
+                            continue; //No reading/writing incompatbiles
+                    }
+                    DebugPrint("Writing field " + field.Name + " at " + wb.BaseStream.Position);
                     Write(field.FieldType,field.GetValue(obj), wb);
                 }
             }
             else if (typeof(IWritable).IsAssignableFrom(type))
             {
+                DebugPrint("Writing type " + type.ToString() + " at " + wb.BaseStream.Position);
                 var instance = (IWritable)obj;
                 instance.Write(wb);
             }
