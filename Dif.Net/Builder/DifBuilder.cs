@@ -32,9 +32,9 @@ namespace Dif.Net.Builder
         {
             var poly = new Polygon()
             {
-                Vertices = new List<Vector3>() { p1, p2, p3 },
+                Vertices = FlipNormals ? new List<Vector3>() { p3, p2, p1 } : new List<Vector3>() { p1, p2, p3 },
                 Indices = new List<int>() { 0, 1, 2},
-                UV = new List<Vector2>() { uv1, uv2, uv3 },
+                UV = FlipNormals ? new List<Vector2>() { uv3, uv2, uv1 } : new List<Vector2>() { uv1, uv2, uv3 },
                 Material = "None",
                 Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * (FlipNormals ? -1 : 1)
             };
@@ -44,11 +44,11 @@ namespace Dif.Net.Builder
         {
             var poly = new Polygon()
             {
-                Vertices = new List<Vector3>() { p1, p2, p3 },
+                Vertices = FlipNormals ? new List<Vector3>() { p3, p2, p1 } : new List<Vector3>() { p1, p2, p3 },
                 Indices = new List<int>() { 0, 1, 2 },
-                UV = new List<Vector2>() { uv1, uv2, uv3 },
+                UV = FlipNormals ? new List<Vector2>() { uv3, uv2, uv1 } : new List<Vector2>() { uv1, uv2, uv3 },
                 Material = material,
-                Normal = normal
+                Normal = FlipNormals ? new Plane().FromPtNormal(p3, -1 * normal).Normal : new Plane().FromPtNormal(p1, normal).Normal
             };
             if (!materialList.Contains(material))
                 materialList.Add(material);
@@ -58,9 +58,9 @@ namespace Dif.Net.Builder
         {
             var poly = new Polygon()
             {
-                Vertices = new List<Vector3>() { p1, p2, p3 },
+                Vertices = FlipNormals ? new List<Vector3>() { p3, p2, p1 } : new List<Vector3>() { p1, p2, p3 },
                 Indices = new List<int>() { 0, 1, 2 },
-                UV = new List<Vector2>() { uv1, uv2, uv3},
+                UV = FlipNormals ? new List<Vector2>() { uv3, uv2, uv1 } : new List<Vector2>() { uv1, uv2, uv3 },
                 Material = material,
                 Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * (FlipNormals ? -1 : 1)
             };
@@ -742,7 +742,7 @@ namespace Dif.Net.Builder
             interior.hasAlarmState = false;
             interior.numLightStateEntries = 0;
             interior.boundingBox = GetBoundingBox();
-            interior.boundingSphere = GetBoundingSphere();           
+            interior.boundingSphere = GetBoundingSphere();
             interior.animatedLights = new List<AnimatedLight>();
             interior.lightMaps = new List<Lightmap>();
             interior.lightStates = new List<LightState>();
@@ -755,6 +755,7 @@ namespace Dif.Net.Builder
             interior.texMatrices = new List<TexMatrix>();
             interior.texNormals = new List<Vector3>();
             interior.zonePortalList = new MultiSizeIntList<short, short>();
+            interior.extendedLightMapData = new ExtendedLightmapData() { extendedData = 0 };
 
             ir.detailLevels.Add(interior);
         }

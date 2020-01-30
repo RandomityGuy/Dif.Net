@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.705
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29709.97
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dif.Net", "Dif.Net\Dif.Net.csproj", "{16733075-4B25-4CDA-B92E-33C9ED9F2D29}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DifDecompiler", "DifDecompiler\DifDecompiler.csproj", "{F29B6E31-97F4-4453-8BD7-F74D36067075}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DifNetTests", "DifNetTests\DifNetTests.csproj", "{BA113A49-3DF7-488D-B93C-5B21A34495FF}"
 EndProject
@@ -19,6 +21,10 @@ Global
 		{16733075-4B25-4CDA-B92E-33C9ED9F2D29}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{16733075-4B25-4CDA-B92E-33C9ED9F2D29}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{16733075-4B25-4CDA-B92E-33C9ED9F2D29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F29B6E31-97F4-4453-8BD7-F74D36067075}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F29B6E31-97F4-4453-8BD7-F74D36067075}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F29B6E31-97F4-4453-8BD7-F74D36067075}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F29B6E31-97F4-4453-8BD7-F74D36067075}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BA113A49-3DF7-488D-B93C-5B21A34495FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BA113A49-3DF7-488D-B93C-5B21A34495FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA113A49-3DF7-488D-B93C-5B21A34495FF}.Release|Any CPU.ActiveCfg = Release|Any CPU

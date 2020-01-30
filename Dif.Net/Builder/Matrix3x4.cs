@@ -222,6 +222,8 @@ namespace Dif.Net.Builder
             }
         }
 
+
+
         //public static Matrix3x4 operator *(float lhs,Matrix3x3 rhs)
         //{
         //    return new Matrix3x3(rhs.a1 * lhs, rhs.a2 * lhs, rhs.a3 * lhs, rhs.b1 * lhs, rhs.b2 * lhs, rhs.b3 * lhs, rhs.c1 * lhs, rhs.c2 * lhs, rhs.c3 * lhs);

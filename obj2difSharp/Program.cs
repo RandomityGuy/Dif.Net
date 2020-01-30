@@ -43,7 +43,7 @@ namespace obj2difSharp
                         tricount = 0;
                     }
                     tricount++;
-                    builder.AddTriangle(group.Points[face.v1], group.Points[face.v2], group.Points[face.v3], group.UV[face.uv1], group.UV[face.uv2], group.UV[face.uv3],group.Normals[0], Path.GetFileNameWithoutExtension(face.material));
+                    builder.AddTriangle(group.Points[face.v3], group.Points[face.v2], group.Points[face.v1], group.UV[face.uv3], group.UV[face.uv2], group.UV[face.uv1],group.Normals[0], Path.GetFileNameWithoutExtension(face.material));
                 }
             }
 
