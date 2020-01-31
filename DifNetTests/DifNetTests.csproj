@@ -50,5 +50,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Dif.Net\Dif.Net.csproj">
+      <Project>{16733075-4b25-4cda-b92e-33c9ed9f2d29}</Project>
+      <Name>Dif.Net</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
