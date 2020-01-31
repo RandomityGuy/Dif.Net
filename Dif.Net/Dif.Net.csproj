@@ -75,6 +75,7 @@
     <Compile Include="LightState.cs" />
     <Compile Include="MultiSizeIntList.cs" />
     <Compile Include="NullSurface.cs" />
+    <Compile Include="InteriorPlane.cs" />
     <Compile Include="Plane.cs" />
     <Compile Include="Portal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -48,7 +48,7 @@ namespace Dif.Net.Builder
                 Indices = new List<int>() { 0, 1, 2 },
                 UV = FlipNormals ? new List<Vector2>() { uv3, uv2, uv1 } : new List<Vector2>() { uv1, uv2, uv3 },
                 Material = material,
-                Normal = FlipNormals ? new Plane().FromPtNormal(p3, -1 * normal).Normal : new Plane().FromPtNormal(p1, normal).Normal
+                Normal = FlipNormals ? new Plane(p3, -1 * normal).Normal : new Plane(p1, normal).Normal
             };
             if (!materialList.Contains(material))
                 materialList.Add(material);
@@ -62,7 +62,7 @@ namespace Dif.Net.Builder
                 Indices = new List<int>() { 0, 1, 2 },
                 UV = FlipNormals ? new List<Vector2>() { uv3, uv2, uv1 } : new List<Vector2>() { uv1, uv2, uv3 },
                 Material = material,
-                Normal = Vector3.Normalize(Vector3.Cross((p2 - p1), (p3 - p1))) * (FlipNormals ? -1 : 1)
+                Normal = Vector3.Normalize(Vector3.Cross((p1 - p2), (p3 - p2))) * (FlipNormals ? -1 : 1)
             };
             if (!materialList.Contains(material))
                 materialList.Add(material);
@@ -104,8 +104,7 @@ namespace Dif.Net.Builder
             if (planehashes == null)
                 planehashes = new Dictionary<int, short>();
 
-            var plane = new Plane();
-            plane = plane.FromPtNormal(poly.Vertices[0], poly.Normal);
+            var plane = new Plane(poly.Vertices[0], poly.Normal);
             var hash = plane.Normal.X.GetHashCode() ^ plane.Normal.Y.GetHashCode() ^ plane.Normal.Z.GetHashCode() ^ plane.D.GetHashCode();
             if (planehashes.ContainsKey(hash))
                 return planehashes[hash];
@@ -671,7 +670,7 @@ namespace Dif.Net.Builder
                 leafnode.Polygon = poly;
                 var n = new BSPBuilder.BSPNode();
                 n.Front = leafnode;
-                n.Plane = new Plane().FromPtNormal(poly.Vertices[0], poly.Normal);
+                n.Plane = new Plane(poly.Vertices[0], poly.Normal);
                 bspnodes.Add(n);
             }
 
@@ -728,8 +727,11 @@ namespace Dif.Net.Builder
             for (int i = 0; i < interior.surfaces.Count; i++)
                 interior.zoneSurfaces.Add((short)i);
 
+            interior.boundingBox = GetBoundingBox();
+            interior.boundingSphere = GetBoundingSphere();
 
             ExportCoordBins();
+
 
             //Initialize all the null values to default values
             interior.interiorFileVersion = 0;
@@ -741,8 +743,6 @@ namespace Dif.Net.Builder
             interior.minPixels = 250;
             interior.hasAlarmState = false;
             interior.numLightStateEntries = 0;
-            interior.boundingBox = GetBoundingBox();
-            interior.boundingSphere = GetBoundingSphere();
             interior.animatedLights = new List<AnimatedLight>();
             interior.lightMaps = new List<Lightmap>();
             interior.lightStates = new List<LightState>();

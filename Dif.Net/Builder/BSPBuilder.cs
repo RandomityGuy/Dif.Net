@@ -9,33 +9,28 @@ using KdTree;
 
 namespace Dif.Net.Builder
 {
-    public static class PlaneExtensions
-    {
-        public static Plane FromPtNormal(this Plane p,Vector3 point, Vector3 normal)
-        {
-            p.Normal = normal;
-            float w = (float)Math.Sqrt(normal.X * normal.X + normal.Y * normal.Y + normal.Z * normal.Z);
-            p.Normal.X /= w;
-            p.Normal.Y /= w;
-            p.Normal.Z /= w;
-            //normal = glm::normalize(normal);
-
-            p.D = -(Vector3.Dot(point, normal));
-
-            return p;
-        }
-    }
 
     public class BSPBuilder
     {
         public class BSPNode
         {
             public bool IsLeaf = false;
-            public Plane Plane;
+            public Plane Plane = new Plane();
             public BSPNode Front;
             public BSPNode Back;
             public Polygon Polygon;
             public Vector3? Center = null;
+
+            public int FrontDepth
+            {
+                get
+                {
+                    if (Front == null)
+                        return 0;
+                    else
+                        return 1 + Front.FrontDepth;
+                }
+            }
 
             public void CalculateCenter()
             {
@@ -111,6 +106,11 @@ namespace Dif.Net.Builder
                     return count;
                 }
             }
+
+            public string Serialize()
+            {
+                return $"{{ IsLeaf : \"{IsLeaf.ToString()}\" , Plane : \"{Plane.Normal.X.ToString() + " " + Plane.Normal.Y + " " + Plane.Normal.Z + " " + Plane.D}\", Front : {(Front == null ? "null" : Front.Serialize())}, Back : {(Back == null ? "null" : Back.Serialize())}, Center : \"{Center.Value.ToString()}\" }}";
+            }
         }
 
         int hashPoint(Vector3 p)
@@ -134,8 +134,10 @@ namespace Dif.Net.Builder
 
             var containednodelist = new HashSet<BSPNode>();
 
+            BSPNode previousnode = null;
+
             //Now to pair up nearest nodes
-            for (var i = 0; i < nodes.Count;i++)
+            for (var i = 0; i < nodes.Count; i++)
             {
                 //We already used this node up
                 if (containednodelist.Contains(nodes[i]))
@@ -149,24 +151,33 @@ namespace Dif.Net.Builder
                 //Find the nearest node
                 var nn = kdtree.GetNearestNeighbours(new float[] { pt.X, pt.Y, pt.Z }, 1);
 
+                BSPNode nb;
+
                 //No nodes found
                 if (nn.Length == 0)
                 {
-                    //Insert the node as it is in the new list
+                    //Well we just use the previously searched node again
+                    //The reason why this is necessary is not known but apparently, doing this
+                    //actually fixes the whole bsp generation and the dif generated is proper
+                    //nb = previousnode;
                     newnodes.Add(nodes[i]);
                     break;
+                    //newnodes.Add(previousnode);
                 }
+                else
+                {
+                    previousnode = nn[0].Value;
 
-                var nb = nn[0].Value;
+                    nb = nn[0].Value;
 
-                containednodelist.Add(nb);
+                    containednodelist.Add(nb);
+                }
 
                 //The centre of the new node is the mean of both nodes
                 var center = (pt + nb.Center.Value) * 0.5f;
 
                 //Construct the plane
-                var p = new Plane();
-                p = p.FromPtNormal(center, nb.Center.Value - pt);
+                var p = new Plane(center, nb.Center.Value - pt);
 
                 //Construct the node
                 var newnode = new BSPNode();
@@ -180,6 +191,11 @@ namespace Dif.Net.Builder
 
                 //Add the node in
                 newnodes.Add(newnode);
+            }
+
+            foreach (var node in newnodes)
+            {
+                var s = node.Serialize();
             }
 
             return newnodes;
