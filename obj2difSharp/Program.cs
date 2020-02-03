@@ -7,8 +7,6 @@ using Dif.Net;
 using Dif.Net.Builder;
 using System.Numerics;
 using System.IO;
-using FileFormatWavefront;
-using FileFormatWavefront.Model;
 
 namespace obj2difSharp
 {

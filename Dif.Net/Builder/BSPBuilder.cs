@@ -193,11 +193,6 @@ namespace Dif.Net.Builder
                 newnodes.Add(newnode);
             }
 
-            foreach (var node in newnodes)
-            {
-                var s = node.Serialize();
-            }
-
             return newnodes;
 
         }

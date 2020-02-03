@@ -245,8 +245,8 @@ namespace DifDecompiler
             var ysolution = Solve3VarLinearEquation(ymatrix);
 
             var texgen = new TexGenEQ();
-            texgen.planeX = new Plane(xsolution.X, xsolution.Y, xsolution.Z, 0);
-            texgen.planeY = new Plane(ysolution.X, ysolution.Y, ysolution.Z, 0);
+            texgen.planeX = new Dif.Net.Plane(xsolution.X, xsolution.Y, xsolution.Z, 0);
+            texgen.planeY = new Dif.Net.Plane(ysolution.X, ysolution.Y, ysolution.Z, 0);
             return texgen;
         }
     }
