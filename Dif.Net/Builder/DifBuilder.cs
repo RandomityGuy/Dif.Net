@@ -662,6 +662,7 @@ namespace Dif.Net.Builder
 
         public void Build(ref InteriorResource ir)
         {
+            Console.WriteLine("Building BSP");
             var bspnodes = new List<BSPBuilder.BSPNode>();
             foreach (var poly in polygons)
             {
@@ -678,10 +679,12 @@ namespace Dif.Net.Builder
             var root = BSPBuilder.BuildBSPRecursive(bspnodes);
 
             polygons.Clear();
+            Console.WriteLine("Gathering Polygons");
             root.GatherPolygons(ref polygons);
 
             interior = new Interior();
 
+            Console.WriteLine("Exporting BSP");
             var orderedpolys = new List<Polygon>();
             ExportBSP(root, ref orderedpolys);
 
@@ -706,9 +709,10 @@ namespace Dif.Net.Builder
             if (lastPolys.Count != 0)
                 groupedPolys.Add(lastPolys);
 
-
+            Console.WriteLine("Exporting Convex Hulls");
             ExportConvexHulls(groupedPolys);
 
+            Console.WriteLine("Exporting Zones");
             if (interior.zones == null)
                 interior.zones = new List<Zone>();
             var z = new Zone();
@@ -719,6 +723,7 @@ namespace Dif.Net.Builder
 
             interior.zones.Add(z);
 
+            Console.WriteLine("Exporting ZoneSurfaces");
             if (interior.zoneSurfaces == null)
                 interior.zoneSurfaces = new MultiSizeIntList<short, short>();
 
@@ -730,9 +735,10 @@ namespace Dif.Net.Builder
             interior.boundingBox = GetBoundingBox();
             interior.boundingSphere = GetBoundingSphere();
 
+            Console.WriteLine("Exporting CoordBins");
             ExportCoordBins();
 
-
+            Console.WriteLine("Finalizing");
             //Initialize all the null values to default values
             interior.interiorFileVersion = 0;
             interior.materialListVersion = 1;

@@ -23,52 +23,55 @@ namespace obj2difSharp
                 Console.WriteLine("(optional) f: flip normals");
                 Console.WriteLine("(optional) r: reverse vertex order");
             }
-            var objreader = new ObjReader();
-            objreader.Parse(args[0]);
-
-            var flipnormal = false;
-            var reverseverts = false;
-            foreach (var arg in args)
+            else
             {
-                if (arg == "-f")
-                    flipnormal = true;
+                var objreader = new ObjReader();
+                objreader.Parse(args[0]);
 
-                if (arg == "-r")
-                    reverseverts = true;
-            }
-
-            var builders = new List<DifBuilder>();
-            var builder = new DifBuilder();
-            builders.Add(builder);
-            builder.FlipNormals = flipnormal;
-            var tricount = 0;
-            foreach (var group in objreader.Groups)
-            {
-                foreach (var face in group.Faces)
+                var flipnormal = false;
+                var reverseverts = false;
+                foreach (var arg in args)
                 {
-                    if (tricount > 16384) //Max limits reached
-                    {
-                        builder = new DifBuilder();
-                        builder.FlipNormals = flipnormal;
-                        builders.Add(builder);
-                        tricount = 0;
-                    }
-                    tricount++;
-                    if (reverseverts)
-                        builder.AddTriangle(group.Points[face.v3], group.Points[face.v2], group.Points[face.v1], group.UV[face.uv3], group.UV[face.uv2], group.UV[face.uv1],group.Normals[face.n3], Path.GetFileNameWithoutExtension(face.material));
-                    else
-                        builder.AddTriangle(group.Points[face.v1], group.Points[face.v2], group.Points[face.v3], group.UV[face.uv1], group.UV[face.uv2], group.UV[face.uv3], group.Normals[face.n1], Path.GetFileNameWithoutExtension(face.material));
+                    if (arg == "-f")
+                        flipnormal = true;
+
+                    if (arg == "-r")
+                        reverseverts = true;
                 }
-            }
 
-            Console.WriteLine("Building Difs");
+                var builders = new List<DifBuilder>();
+                var builder = new DifBuilder();
+                builders.Add(builder);
+                builder.FlipNormals = flipnormal;
+                var tricount = 0;
+                foreach (var group in objreader.Groups)
+                {
+                    foreach (var face in group.Faces)
+                    {
+                        if (tricount > 16384) //Max limits reached
+                        {
+                            builder = new DifBuilder();
+                            builder.FlipNormals = flipnormal;
+                            builders.Add(builder);
+                            tricount = 0;
+                        }
+                        tricount++;
+                        if (reverseverts)
+                            builder.AddTriangle(group.Points[face.v3], group.Points[face.v2], group.Points[face.v1], group.UV[face.uv3], group.UV[face.uv2], group.UV[face.uv1], group.Normals[face.n3], Path.GetFileNameWithoutExtension(face.material));
+                        else
+                            builder.AddTriangle(group.Points[face.v1], group.Points[face.v2], group.Points[face.v3], group.UV[face.uv1], group.UV[face.uv2], group.UV[face.uv3], group.Normals[face.n1], Path.GetFileNameWithoutExtension(face.material));
+                    }
+                }
 
-            for (int i = 0; i < builders.Count; i++)
-            {
-                var build = builders[i];
-                var dif = new InteriorResource();
-                build.Build(ref dif);
-                InteriorResource.Save(dif, Path.ChangeExtension(args[0], null) + i + ".dif");
+                Console.WriteLine("Building Difs");
+
+                for (int i = 0; i < builders.Count; i++)
+                {
+                    var build = builders[i];
+                    var dif = new InteriorResource();
+                    build.Build(ref dif);
+                    InteriorResource.Save(dif, Path.ChangeExtension(args[0], null) + i + ".dif");
+                }
             }
         }
     }
