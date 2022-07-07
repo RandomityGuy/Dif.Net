@@ -70,7 +70,10 @@ namespace Dif.Net.Builder
             public void GatherPolygons(ref List<Polygon> polys)
             {
                 if (IsLeaf)
-                    polys.Add(Polygon);
+                {
+                    if (!polys.Contains(Polygon))
+                        polys.Add(Polygon);
+                }
                 else
                 {
                     if (Front != null)
@@ -143,6 +146,12 @@ namespace Dif.Net.Builder
                 if (containednodelist.Contains(nodes[i]))
                     continue;
 
+                if (i == nodes.Count - 1)
+                {
+                    newnodes.Add(nodes[i]);
+                    break;
+                }
+
 
                 var node = nodes[i];
                 var pt = node.Center.Value;
@@ -159,10 +168,11 @@ namespace Dif.Net.Builder
                     //Well we just use the previously searched node again
                     //The reason why this is necessary is not known but apparently, doing this
                     //actually fixes the whole bsp generation and the dif generated is proper
-                    //nb = previousnode;
-                    newnodes.Add(nodes[i]);
-                    break;
+                    nb = previousnode;
+                    //newnodes.Add(nodes[i]);
+                    //break;
                     //newnodes.Add(previousnode);
+
                 }
                 else
                 {

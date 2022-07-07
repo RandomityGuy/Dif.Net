@@ -19,6 +19,7 @@ namespace Dif.Net
 
         public string name;
         public string datablock;
+        [Version(0,0)]
         public Dictionary<string, string> properties;
         public List<Vector3> polyHedronPoints;
         public List<Plane> polyHedronPlanes;

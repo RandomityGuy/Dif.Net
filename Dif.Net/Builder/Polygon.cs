@@ -14,5 +14,6 @@ namespace Dif.Net.Builder
         public List<int> Indices = new List<int>();
         public Vector3 Normal = new Vector3();
         public string Material;
+        public int surfaceIndex = -1;
     }
 }

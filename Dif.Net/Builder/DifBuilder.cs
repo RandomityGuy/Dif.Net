@@ -22,8 +22,7 @@ namespace Dif.Net.Builder
         Interior interior;
 
         //For optimization/searching of these
-        Dictionary<int, short> planehashes = new Dictionary<int, short>();
-        Dictionary<int, int> pointhashes = new Dictionary<int, int>();
+        Dictionary<Polygon, short> planehashes = new Dictionary<Polygon, short>();
         Dictionary<int, int> emitstringhashes = new Dictionary<int, int>();
 
         List<string> materialList = new List<string>() { "NONE" };
@@ -102,12 +101,12 @@ namespace Dif.Net.Builder
                 interior.planes = new List<InteriorPlane>();
 
             if (planehashes == null)
-                planehashes = new Dictionary<int, short>();
+                planehashes = new Dictionary<Polygon, short>();
 
             var plane = new Plane(poly.Vertices[0], poly.Normal);
             var hash = plane.Normal.X.GetHashCode() ^ plane.Normal.Y.GetHashCode() ^ plane.Normal.Z.GetHashCode() ^ plane.D.GetHashCode();
-            if (planehashes.ContainsKey(hash))
-                return planehashes[hash];
+            if (planehashes.ContainsKey(poly))
+                return planehashes[poly];
 
             if (interior.planes.Count > ushort.MaxValue)
                 throw new Exception("Plane Limits Reached");
@@ -121,7 +120,8 @@ namespace Dif.Net.Builder
             p.planeDistance = plane.D;
             interior.planes.Add(p);
             interior.normals.Add(poly.Normal);
-            planehashes.Add(hash, index);
+            planehashes.Add(poly, index);
+            // planehashes.Add(hash, index);
             return index;
         }
 
@@ -131,14 +131,14 @@ namespace Dif.Net.Builder
                 interior.planes = new List<InteriorPlane>();
 
             if (planehashes == null)
-                planehashes = new Dictionary<int, short>();
+                planehashes = new Dictionary<Polygon, short>();
 
             if (interior.normals == null)
                 interior.normals = new List<Vector3>();
 
             var hash = plane.Normal.X.GetHashCode() ^ plane.Normal.Y.GetHashCode() ^ plane.Normal.Z.GetHashCode() ^ plane.D.GetHashCode();
-            if (planehashes.ContainsKey(hash))
-                return planehashes[hash];
+            //if (planehashes.ContainsKey(hash))
+            //    return planehashes[hash];
 
             if (interior.planes.Count > ushort.MaxValue)
                 throw new Exception("Plane Limits Reached");
@@ -152,7 +152,7 @@ namespace Dif.Net.Builder
             p.planeDistance = plane.D;
             interior.planes.Add(p);
             interior.normals.Add(plane.Normal);
-            planehashes.Add(hash, index);
+            // planehashes.Add(hash, index);
             return index;
         }
 
@@ -181,8 +181,8 @@ namespace Dif.Net.Builder
                 interior.pointVisibilities = new List<byte>();
 
             var hash = p.X.GetHashCode() ^ p.Y.GetHashCode() ^ p.Z.GetHashCode();
-            if (pointhashes.ContainsKey(hash))
-                return pointhashes[hash];
+            //if (pointhashes.ContainsKey(hash))
+            //    return pointhashes[hash];
 
             var index = interior.points.Count;
             interior.points.Add(p);
@@ -245,18 +245,22 @@ namespace Dif.Net.Builder
             var index = interior.surfaces.Count;
             var surf = new Surface();
 
+            poly.surfaceIndex = index;
+
             surf.planeIndex = ExportPlane(poly);
             surf.textureIndex = ExportTexture(poly.Material);
             surf.texGenIndex = ExportTexGen(poly);
             surf.surfaceFlags = 16;
-            surf.fanMask = 15;
             ExportWinding(poly);
             var last = interior.windingIndices.Last();
             surf.windingStart = last.windingStart;
             if (last.windingCount > byte.MaxValue)
                 throw new Exception("Max Windings for surface reached");
             surf.windingCount = (byte)last.windingCount;
+            surf.fanMask = 0;
             interior.windingIndices.RemoveAt(interior.windingIndices.Count - 1);
+            for (var i = 0; i < surf.windingCount; i++)
+                surf.fanMask |= (1 << i);
             surf.lightCount = 0;
             surf.lightStateInfoStart = 0;
             surf.mapSizeX = 0;
@@ -307,7 +311,6 @@ namespace Dif.Net.Builder
                 leaf.surfaceCount = 0;
 
                 var leafPolyIndices = new List<int>();
-
 
                 leafPolyIndices.Add(ExportSurface(n.Polygon));
                 orderedPolys.Add(n.Polygon);
@@ -393,7 +396,7 @@ namespace Dif.Net.Builder
                 hull.surfaceCount = (short)polys[polyIndex].Count;
 
                 for (int i = 0; i < hull.surfaceCount; i++)
-                    interior.hullSurfaceIndices.Add(hull.surfaceStart + i);
+                    interior.hullSurfaceIndices.Add(polys[polyIndex][i].surfaceIndex);
 
                 hull.hullStart = interior.hullIndices.Count;
                 hull.hullCount = 0;
@@ -662,7 +665,6 @@ namespace Dif.Net.Builder
 
         public void Build(ref InteriorResource ir)
         {
-            Console.WriteLine("Building BSP");
             var bspnodes = new List<BSPBuilder.BSPNode>();
             foreach (var poly in polygons)
             {
@@ -678,15 +680,19 @@ namespace Dif.Net.Builder
             var BSPBuilder = new BSPBuilder();
             var root = BSPBuilder.BuildBSPRecursive(bspnodes);
 
-            polygons.Clear();
-            Console.WriteLine("Gathering Polygons");
-            root.GatherPolygons(ref polygons);
+            // polygons.Clear();
+            // root.GatherPolygons(ref polygons);
 
             interior = new Interior();
 
-            Console.WriteLine("Exporting BSP");
             var orderedpolys = new List<Polygon>();
             ExportBSP(root, ref orderedpolys);
+
+            foreach (var poly in polygons)
+            {
+                if (poly.surfaceIndex == -1)
+                    throw new Exception("Unused Poly!");
+            }
 
             var groupedPolys = new List<List<Polygon>>();
 
@@ -709,10 +715,9 @@ namespace Dif.Net.Builder
             if (lastPolys.Count != 0)
                 groupedPolys.Add(lastPolys);
 
-            Console.WriteLine("Exporting Convex Hulls");
+
             ExportConvexHulls(groupedPolys);
 
-            Console.WriteLine("Exporting Zones");
             if (interior.zones == null)
                 interior.zones = new List<Zone>();
             var z = new Zone();
@@ -723,7 +728,6 @@ namespace Dif.Net.Builder
 
             interior.zones.Add(z);
 
-            Console.WriteLine("Exporting ZoneSurfaces");
             if (interior.zoneSurfaces == null)
                 interior.zoneSurfaces = new MultiSizeIntList<short, short>();
 
@@ -735,10 +739,9 @@ namespace Dif.Net.Builder
             interior.boundingBox = GetBoundingBox();
             interior.boundingSphere = GetBoundingSphere();
 
-            Console.WriteLine("Exporting CoordBins");
             ExportCoordBins();
 
-            Console.WriteLine("Finalizing");
+
             //Initialize all the null values to default values
             interior.interiorFileVersion = 0;
             interior.materialListVersion = 1;
