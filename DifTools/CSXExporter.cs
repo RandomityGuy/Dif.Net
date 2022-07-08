@@ -62,12 +62,6 @@ namespace DifTools
             if (hull.hullCount == 0)
                 return;
 
-            var brush = new XElement("Brush");
-            brush.Add(new XAttribute("id", currentBrushID.ToString()));
-            currentBrushID++;
-            brush.Add(new XAttribute("owner", "0"));
-            brush.Add(new XAttribute("type", "0"));
-
             var hullpointsdoublearray = interior.hullSurfaceIndices.Skip(hull.surfaceStart).Take(hull.surfaceCount).Select(c =>
             {
                 try
@@ -81,29 +75,11 @@ namespace DifTools
             }).Select(a => interior.windings.Skip(a.windingStart).Take(a.windingCount).Select(b => interior.points[b]));
             var hullpoints = new List<Vector3>();
             hullpointsdoublearray.ToList().ForEach(a => a.ToList().ForEach(b => hullpoints.Add(b)));
-           
+
             var centre = Vector3.Zero;
 
             hullpoints.ForEach(a => centre += a);
             centre /= hullpoints.Count;
-
-            brush.Add(new XAttribute("pos", centre.X.ToString() + " " + centre.Y + " " + centre.Z));
-            brush.Add(new XAttribute("rot", "1 0 0 0"));
-            brush.Add(new XAttribute("scale", ""));
-            brush.Add(new XAttribute("transform", "1 0 0 " + centre.X + " 0 1 0 " + centre.Y + " 0 0 1 " + centre.Z + " 0 0 0 1"));
-            brush.Add(new XAttribute("group", "-1"));
-            brush.Add(new XAttribute("locked", "0"));
-            brush.Add(new XAttribute("nextFaceID", interior.surfaces.Count.ToString()));
-            brush.Add(new XAttribute("nextVertexID", hullpoints.Count.ToString()));
-
-            var vertices = new XElement("Vertices");
-            foreach (var vertex in hullpoints)
-            {
-                var relpos = vertex - centre;
-                vertices.Add(new XElement("Vertex", new XAttribute("pos", relpos.X.ToString() + " " + relpos.Y + " " + relpos.Z)));
-            }
-
-            brush.Add(vertices);
 
             var surfaceindices = interior.hullSurfaceIndices.Skip(hull.surfaceStart).Take(hull.surfaceCount);
 
@@ -115,6 +91,33 @@ namespace DifTools
 
             foreach (var surface in surfaces)
             {
+                var brush = new XElement("Brush");
+                brush.Add(new XAttribute("id", currentBrushID.ToString()));
+                currentBrushID++;
+                brush.Add(new XAttribute("owner", "0"));
+                brush.Add(new XAttribute("type", "0"));
+
+                brush.Add(new XAttribute("pos", centre.X.ToString() + " " + centre.Y + " " + centre.Z));
+                brush.Add(new XAttribute("rot", "1 0 0 0"));
+                brush.Add(new XAttribute("scale", ""));
+                brush.Add(new XAttribute("transform", "1 0 0 " + centre.X + " 0 1 0 " + centre.Y + " 0 0 1 " + centre.Z + " 0 0 0 1"));
+                brush.Add(new XAttribute("group", "-1"));
+                brush.Add(new XAttribute("locked", "0"));
+                brush.Add(new XAttribute("nextFaceID", interior.surfaces.Count.ToString()));
+                brush.Add(new XAttribute("nextVertexID", hullpoints.Count.ToString()));
+
+                var surfacePoints = interior.windings.Skip(surface.windingStart).Take(surface.windingCount).Select(i => interior.points[i]).ToList();
+
+                var vertices = new XElement("Vertices");
+                foreach (var vertex in surfacePoints)
+                {
+                    var relpos = vertex - centre;
+                    vertices.Add(new XElement("Vertex", new XAttribute("pos", relpos.X.ToString() + " " + relpos.Y + " " + relpos.Z)));
+                }
+
+                brush.Add(vertices);
+
+
                 var indices = interior.windings.Skip(surface.windingStart).Take(surface.windingCount).ToList();
 
                 // var indicestr = string.Join(' ', indices.Select(i => interior.points[i]).Select(p => hullpoints.IndexOf(p).ToString()));
@@ -127,15 +130,15 @@ namespace DifTools
 
                     if (i % 2 == 0)
                     {
-                        index0 = hullpoints.IndexOf(interior.points[indices[i + 2]]);
-                        index1 = hullpoints.IndexOf(interior.points[indices[i + 1]]);
-                        index2 = hullpoints.IndexOf(interior.points[indices[i]]);
+                        index0 = surfacePoints.IndexOf(interior.points[indices[i + 2]]);
+                        index1 = surfacePoints.IndexOf(interior.points[indices[i + 1]]);
+                        index2 = surfacePoints.IndexOf(interior.points[indices[i]]);
                     }
                     else
                     {
-                        index2 = hullpoints.IndexOf(interior.points[indices[i + 2]]);
-                        index1 = hullpoints.IndexOf(interior.points[indices[i + 1]]);
-                        index0 = hullpoints.IndexOf(interior.points[indices[i]]);
+                        index2 = surfacePoints.IndexOf(interior.points[indices[i + 2]]);
+                        index1 = surfacePoints.IndexOf(interior.points[indices[i + 1]]);
+                        index0 = surfacePoints.IndexOf(interior.points[indices[i]]);
                     }
 
                     var face = new XElement("Face");
@@ -144,16 +147,26 @@ namespace DifTools
                     var isplaneflipped = (surface.planeIndex & 0x8000) == 0x8000;
                     var plane = isplaneflipped ? interior.planes[(short)unchecked(surface.planeIndex & (short)~0x8000)] : interior.planes[surface.planeIndex];
                     var norm = isplaneflipped ? interior.normals[plane.normalIndex] * -1 : interior.normals[plane.normalIndex];
-                    var pd = plane.planeDistance;
+                    var pd = -plane.planeDistance;
 
-                    //var norm = Vector3.Cross(hullpoints[index1] - hullpoints[index0], hullpoints[index1] - hullpoints[index2]);
-                    //var pd = -Vector3.Dot(hullpoints[index1], norm);
+                    norm = Vector3.Cross(surfacePoints[index1] - surfacePoints[index0], surfacePoints[index1] - surfacePoints[index2]);
+                    norm /= norm.Length();
+                    pd = -Vector3.Dot(surfacePoints[index1] - centre, norm);
 
-                    //if (isplaneflipped)
+                    //if (Math.Abs(Vector3.Dot(norm, norm2)) < 0.99)
                     //{
-                    //    // pd *= -1;
-                    //    Console.WriteLine("PLANE FLIPPED: {0}", currentFaceID - 1);
+                    //    norm = norm2;
+                    //    pd = pd2;
                     //}
+
+                    if (isplaneflipped)
+                    {
+                        // pd *= -1;
+                        Console.WriteLine("PLANE FLIPPED: {0}", currentFaceID - 1);
+                    }
+
+                    // norm *= -1;
+                    // pd *= -1;
 
                     face.Add(new XAttribute("plane", norm.X.ToString() + " " + norm.Y + " " + norm.Z + " " + pd));
                     face.Add(new XAttribute("material", interior.materialList[surface.textureIndex]));
@@ -171,9 +184,10 @@ namespace DifTools
                     brush.Add(face);
                 }
 
+                brushes.Add(brush);
+
             }
 
-            brushes.Add(brush);
 
         }
 
