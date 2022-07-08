@@ -20,6 +20,10 @@ jobs:
       with:
         name: obj2difSharp-macos-x64
         path: obj2difSharp/bin/Release/netcoreapp3.1/osx-x64/publish/obj2difSharp
+    - uses: actions/upload-artifact@v1
+      with:
+        name: DifTools-macos-x64
+        path: DifTools/bin/Release/netcoreapp3.1/osx-x64/publish/DifTools
           
   winbuild:
     name: Windows Build
@@ -38,6 +42,10 @@ jobs:
       with:
         name: obj2difSharp-win-x64
         path: obj2difSharp\bin\Release\netcoreapp3.1\win-x64\publish\obj2difSharp.exe
+    - uses: actions/upload-artifact@v1
+      with:
+        name: DifTools-win-x64
+        path: DifTools\bin\Release\netcoreapp3.1\win-x64\publish\DifTools.exe
  
   release:
     name: "Release"
@@ -58,6 +66,16 @@ jobs:
       with:
         name: obj2difSharp-macos-x64
         path: obj2difSharp-macos-x64
+        
+    - uses: actions/download-artifact@v1
+      with:
+        name: DifTools-win-x64
+        path: DifTools-win-x64.exe
+        
+    - uses: actions/download-artifact@v1
+      with:
+        name: DifTools-macos-x64
+        path: DifTools-macos-x64
 
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
@@ -68,3 +86,13 @@ jobs:
           files: |
             obj2difSharp-win-x64.exe
             obj2difSharp-macos-x64
+            
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+          automatic_release_tag: auto-build
+          title: DifTools
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            DifTools-win-x64.exe
+            DifTools-macos-x64
