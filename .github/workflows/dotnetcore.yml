@@ -57,22 +57,22 @@ jobs:
       
     - uses: actions/checkout@v1
 
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: obj2difSharp-win-x64
         path: obj2difSharp-win-x64.exe
         
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: obj2difSharp-macos-x64
         path: obj2difSharp-macos-x64
         
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: DifTools-win-x64
         path: DifTools-win-x64.exe
         
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: DifTools-macos-x64
         path: DifTools-macos-x64
